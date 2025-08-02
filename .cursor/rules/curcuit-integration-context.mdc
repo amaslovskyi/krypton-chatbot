@@ -1,0 +1,49 @@
+---
+description: "CURCUIT API integration and LLM fallback system context"
+---
+
+# CURCUIT API Integration Context
+
+## Project Overview
+This project implements a RAG (Retrieval-Augmented Generation) chatbot with a sophisticated LLM fallback system:
+
+**Primary LLM:** Cisco CURCUIT API (cloud-based, OAuth2 authentication)  
+**Backup LLM:** Local Ollama (offline capable)  
+**Fallback LLM:** OpenAI (if configured)
+
+## Key Integration Files
+- [src/curcuit_api.py](mdc:src/curcuit_api.py) - CURCUIT API client with OAuth2 token management
+- [src/chatbot.py](mdc:src/chatbot.py) - Main chatbot with intelligent fallback system
+- [config.py](mdc:config.py) - Configuration management with CURCUIT settings
+- [test_curcuit_integration.py](mdc:test_curcuit_integration.py) - Integration testing
+- [check_env_mapping.py](mdc:check_env_mapping.py) - Environment validation
+
+## Documentation Files (in md/ directory)
+- [CURCUIT_INTEGRATION.md](mdc:md/CURCUIT_INTEGRATION.md) - Complete technical documentation
+- [SETUP_CURCUIT.md](mdc:md/SETUP_CURCUIT.md) - Quick setup guide for users  
+- [INTEGRATION_SUMMARY.md](mdc:md/INTEGRATION_SUMMARY.md) - Executive summary
+- [SECURITY.md](mdc:md/SECURITY.md) - Security policies
+
+## Configuration Pattern
+Environment variables are loaded from `.env` file (git-ignored):
+```bash
+USE_CURCUIT_API=true
+CURCUIT_CLIENT_ID=your_client_id
+CURCUIT_CLIENT_SECRET=your_client_secret
+CURCUIT_APP_KEY=your_app_key
+CURCUIT_MODEL=gpt-4o-mini
+```
+
+## Security Requirements
+- `.env` file MUST be git-ignored (never committed)
+- All credentials loaded via environment variables
+- No hardcoded secrets in codebase
+- OAuth2 tokens auto-refresh every hour
+
+## LLM Fallback Flow
+1. Try CURCUIT API (primary)
+2. If fails → Try Ollama (backup)  
+3. If fails → Try OpenAI (fallback)
+4. If all fail → Error with helpful message
+
+When answering questions about this project, always reference the current implementation and documentation in the `md/` directory.

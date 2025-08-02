@@ -79,12 +79,20 @@ if [ ! -f ".env" ]; then
 # =========================
 # LLM Configuration
 # =========================
-# Use local Ollama models by default
+# CURCUIT API Configuration (Primary LLM)
+USE_CURCUIT_API=true
+CURCUIT_CLIENT_ID=your_client_id_here
+CURCUIT_CLIENT_SECRET=your_client_secret_here
+CURCUIT_APP_KEY=your_app_key_here
+CURCUIT_MODEL=gpt-4o-mini
+# Available models: gpt-4.1, gpt-4o-mini, gpt-4o, o4-mini
+
+# Local Ollama Configuration (Backup LLM)
 USE_LOCAL_LLM=true
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=gemma3n:latest
 
-# OpenAI API (only needed if USE_LOCAL_LLM=false)
+# OpenAI API (Alternative backup if USE_LOCAL_LLM=false)
 OPENAI_API_KEY=your_openai_api_key_here
 
 # =========================
@@ -179,15 +187,21 @@ echo ""
 echo "🎉 Installation completed successfully!"
 echo ""
 echo "📋 Next steps:"
-echo "1. Edit .env file with your OpenAI API key:"
+echo "1. Configure your LLM settings in .env file:"
 echo "   nano .env"
+echo "   • For CURCUIT API: Set CURCUIT_CLIENT_ID, CURCUIT_CLIENT_SECRET, CURCUIT_APP_KEY"
+echo "   • For OpenAI backup: Set OPENAI_API_KEY (optional)"
+echo "   • For Ollama backup: Ensure Ollama is running (ollama serve)"
 echo ""
 echo "2. If not in virtual environment, activate it:"
 echo "   source ./talos/bin/activate     # or ./talos-env/bin/activate"
 echo ""
 echo "3. Add documents to ./documents/ directory"
 echo ""
-echo "4. Start the chatbot:"
+echo "4. Test the integration:"
+echo "   python test_curcuit_integration.py"
+echo ""
+echo "5. Start the chatbot:"
 echo "   python main.py web      # Web interface"
 echo "   python main.py chat     # Command line"
 echo "   python main.py config   # Check configuration"

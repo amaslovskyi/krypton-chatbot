@@ -9,7 +9,9 @@ A sophisticated **Retrieval-Augmented Generation (RAG)** chatbot that combines l
 ### Core Capabilities
 - **📄 Multi-format Document Support**: PDF, DOCX, TXT, Markdown, and HTML files
 - **🔍 Intelligent Retrieval**: Vector similarity search using ChromaDB and embeddings with local-first approach
-- **🤖 Local & External LLMs**: Support for Ollama (local) and external APIs (OpenAI, Anthropic, Google)
+- **🤖 Enterprise LLM Architecture**: CURCUIT API (primary) with Ollama (backup) and external APIs (fallback)
+- **🏢 CURCUIT Integration**: Cisco's enterprise AI platform with OAuth2 authentication and automatic token refresh
+- **🛡️ Intelligent Fallback System**: Seamless switching between CURCUIT → Ollama → OpenAI for maximum reliability
 - **🌐 Advanced Web Crawling**: Comprehensive repository crawling with 7+ specialized libraries
 - **🎯 Smart Confidence Scoring**: Determines when to use fallback based on local result quality
 - **📊 Real-time Progress Indicators**: Visual feedback during external knowledge base searches
@@ -111,7 +113,7 @@ The crawler is optimized for technical documentation and can find:
 
 ## 🏗️ Architecture
 
-The system uses a modular architecture with clear separation of concerns, conversation memory, and advanced external knowledge integration:
+The system uses a modular architecture with enterprise-grade LLM fallback, conversation memory, and advanced external knowledge integration:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -120,40 +122,67 @@ The system uses a modular architecture with clear separation of concerns, conver
                                 │                        │
                     ┌───────────┼───────────┐            ▼
                     ▼           ▼           ▼   ┌─────────────────┐
-          ┌─────────────┐ ┌─────────────┐ ┌─────┤ Language Model  │
-          │Local Docs   │ │Multi-KB     │ │Ext. │ (Ollama/OpenAI) │
+          ┌─────────────┐ ┌─────────────┐ ┌─────┤Enterprise LLM   │
+          │Local Docs   │ │Multi-KB     │ │Ext. │    Stack        │
           │(Primary)    │ │Directories  │ │URLs └─────────────────┘
           └─────────────┘ └─────────────┘ └─────┘         │
                     │           │           │              ▼
                     └───────────┼───────────┘     ┌─────────────────┐
-                                ▼                  │Conversation     │
-                       ┌─────────────────┐         │Memory System    │
-                       │ Vector Store    │         │ (Session Mgmt)  │
-                       │ (ChromaDB)      │         └─────────────────┘
-                       └─────────────────┘                  │
-                                │                           ▼
-                                ▼                  ┌─────────────────┐
-                    ┌─────────────────────────────┐ │Advanced Crawler │
-                    │   External Knowledge        │ │  Progress UI    │
-                    │                             │ └─────────────────┘
-                    │ ┌─────────────────┐         │          │
-                    │ │Advanced Crawler │         │          ▼
-                    │ │• GitHub Repos   │         │ ┌─────────────────┐
-                    │ │• Documentation  │         │ │Persistent Storage│
-                    │ │• 7+ Libraries   │         │ │   (JSON files)  │
-                    │ └─────────────────┘         │ └─────────────────┘
-                    └─────────────────────────────┘
+                                ▼                  │🥇 CURCUIT API   │
+                       ┌─────────────────┐         │   (Primary)     │
+                       │ Vector Store    │         │🥈 Ollama Local  │
+                       │ (ChromaDB)      │         │   (Backup)      │
+                       └─────────────────┘         │🥉 OpenAI/Others │
+                                │                  │   (Fallback)    │
+                                ▼                  └─────────────────┘
+                    ┌─────────────────────────────┐          │
+                    │   External Knowledge        │          ▼
+                    │                             │ ┌─────────────────┐
+                    │ ┌─────────────────┐         │ │Conversation     │
+                    │ │Advanced Crawler │         │ │Memory System    │
+                    │ │• GitHub Repos   │         │ │ (Session Mgmt)  │
+                    │ │• Documentation  │         │ └─────────────────┘
+                    │ │• 7+ Libraries   │         │          │
+                    │ └─────────────────┐         │          ▼
+                    └─────────────────────────────┘ ┌─────────────────┐
+                                                    │Persistent Storage│
+                                                    │   (JSON files)  │
+                                                    └─────────────────┘
 ```
+
+### 🏢 **Enterprise LLM Stack**
+The system implements a sophisticated three-tier LLM architecture:
+
+1. **🥇 CURCUIT API (Primary)**: Cisco's enterprise AI platform
+   - Latest GPT models (gpt-4o-mini, gpt-4.1, gpt-4o)
+   - OAuth2 authentication with automatic token refresh
+   - Free tier: 30 requests/minute, 200K tokens/minute
+   - Enterprise-grade reliability and performance
+
+2. **🥈 Ollama (Backup)**: Local AI models
+   - Runs offline for maximum reliability
+   - Models: gemma3n:latest, llama2, etc.
+   - Zero external dependencies or costs
+   - Perfect for development and rate-limit scenarios
+
+3. **🥉 External APIs (Fallback)**: OpenAI, Anthropic, Google
+   - Used when both CURCUIT and Ollama fail
+   - Configurable provider and model selection
+   - Ultimate reliability guarantee
 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
 
 - Python 3.8+
-- **For Local LLMs (Recommended)**: [Ollama](https://ollama.ai/) installed with models:
+- **For CURCUIT API (Primary)**: Cisco CURCUIT credentials:
+  - Client ID and Client Secret (OAuth2)
+  - Application Key for API identification
+  - [Request access](https://cisco.sharepoint.com/sites/CIRCUIT/SitePages/API-RAG-options.aspx)
+- **For Local LLMs (Backup)**: [Ollama](https://ollama.ai/) installed with models:
   - `ollama pull gemma3n:latest` (LLM)
   - `ollama pull nomic-embed-text:latest` (embeddings)
-- **For External APIs (Optional)**: API keys for OpenAI, Anthropic, or Google
+- **For External APIs (Fallback)**: API keys for OpenAI, Anthropic, or Google
 
 ### 2. Installation
 
@@ -180,8 +209,19 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-# LLM Configuration (Choose one)
-USE_LOCAL_LLM=true                    # Use local Ollama models (recommended)
+# =========================
+# LLM Configuration
+# =========================
+# CURCUIT API Configuration (Primary LLM)
+USE_CURCUIT_API=true
+CURCUIT_CLIENT_ID=your_client_id_here
+CURCUIT_CLIENT_SECRET=your_client_secret_here
+CURCUIT_APP_KEY=your_app_key_here
+CURCUIT_MODEL=gpt-4o-mini
+# Available models: gpt-4.1, gpt-4o-mini, gpt-4o, o4-mini
+
+# Local Ollama Configuration (Backup LLM)
+USE_LOCAL_LLM=true
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=gemma3n:latest
 
@@ -282,6 +322,15 @@ python main.py test
 #### Check Configuration
 ```bash
 python main.py config
+```
+
+#### Test CURCUIT Integration
+```bash
+# Test CURCUIT API connectivity and fallback system
+python test_curcuit_integration.py
+
+# Check environment variable mapping
+python3 check_env_mapping.py
 ```
 
 ## 📚 Usage Examples
@@ -507,7 +556,12 @@ Once running, the system:
 #### LLM Configuration
 | Variable                       | Default                  | Description                                 |
 | ------------------------------ | ------------------------ | ------------------------------------------- |
-| `USE_LOCAL_LLM`                | `true`                   | Use local Ollama models                     |
+| `USE_CURCUIT_API`              | `true`                   | Use CURCUIT as primary LLM                  |
+| `CURCUIT_CLIENT_ID`            | (required)               | Cisco OAuth2 client ID                      |
+| `CURCUIT_CLIENT_SECRET`        | (required)               | Cisco OAuth2 client secret                  |
+| `CURCUIT_APP_KEY`              | (required)               | Application key for API identification      |
+| `CURCUIT_MODEL`                | `gpt-4o-mini`            | CURCUIT model (gpt-4o-mini/gpt-4.1/gpt-4o)  |
+| `USE_LOCAL_LLM`                | `true`                   | Use local Ollama models as backup           |
 | `OLLAMA_BASE_URL`              | `http://localhost:11434` | Ollama server URL                           |
 | `OLLAMA_MODEL`                 | `gemma3n:latest`         | Local LLM model name                        |
 | `ENABLE_EXTERNAL_API_FALLBACK` | `true`                   | Enable external API fallback                |
@@ -785,7 +839,7 @@ Response:
 
 ### **🔒 Security-Related Issues**
 
-13. **GitLeaks scan failing with false positives**
+17. **GitLeaks scan failing with false positives**
     ```bash
     # Check GitLeaks configuration
     cat .gitleaks.toml
@@ -799,7 +853,7 @@ Response:
     # If legitimate placeholder text is flagged, add to .gitleaks.toml allowlist
     ```
 
-14. **Security scan reporting template credentials as secrets**
+18. **Security scan reporting template credentials as secrets**
     ```bash
     # This is expected behavior for actual credentials
     # Template values like "your_api_key_here" are allowlisted
@@ -811,7 +865,24 @@ Response:
 
 ### Common Issues
 
-1. **Ollama connection issues**
+1. **CURCUIT API authentication issues**
+   ```bash
+   # Check credentials in .env file
+   cat .env | grep CURCUIT
+   
+   # Test CURCUIT integration
+   python test_curcuit_integration.py
+   
+   # Common error messages:
+   # 🚨 CURCUIT API rate limit exceeded: 429
+   #   → Wait 1 minute (30 requests/minute limit)
+   # 🔑 CURCUIT API authentication failed: 401
+   #   → Check CLIENT_ID and CLIENT_SECRET
+   # 🚫 CURCUIT API access forbidden: 403
+   #   → Verify APP_KEY is correct
+   ```
+
+2. **Ollama connection issues (backup LLM)**
    ```bash
    # Ensure Ollama is running
    ollama serve
@@ -824,7 +895,7 @@ Response:
    python main.py test
    ```
 
-2. **File watching not working**
+4. **File watching not working**
    ```bash
    # Install watchdog if missing
    pip install watchdog>=3.0.0
@@ -833,7 +904,7 @@ Response:
    # Look for "👀 File watcher: ✅ Active" message
    ```
 
-3. **Documents not indexing automatically**
+5. **Documents not indexing automatically**
    ```bash
    # Check index status
    python main.py status
@@ -845,28 +916,57 @@ Response:
    ls -la ./documents/
    ```
 
-4. **External API fallback issues**
+6. **LLM fallback system issues**
+   ```bash
+   # Check which LLM is currently being used
+   python main.py config
+   
+   # Test the complete fallback chain
+   python test_curcuit_integration.py
+   
+   # Expected behavior:
+   # 1. CURCUIT API (primary) - high-quality responses
+   # 2. Ollama (backup) - when CURCUIT hits rate limits
+   # 3. External API (fallback) - ultimate reliability
+   ```
+
+7. **External API fallback issues**
    ```bash
    # Check external API configuration
    export EXTERNAL_API_KEY=your_actual_key
    export EXTERNAL_API_PROVIDER=openai  # or anthropic, google
    ```
 
-5. **Memory issues with large documents**
+8. **Getting CURCUIT credentials**
+   ```bash
+   # Request CURCUIT API access:
+   # 1. Visit: https://cisco.sharepoint.com/sites/CIRCUIT/SitePages/API-RAG-options.aspx
+   # 2. Submit API request form with your use case
+   # 3. Receive information card with:
+   #    - CLIENT_ID (OAuth2 client ID)
+   #    - CLIENT_SECRET (OAuth2 client secret)  
+   #    - APP_KEY (application identifier)
+   # 4. Add to your .env file
+   
+   # Verify credentials are working
+   python test_curcuit_integration.py
+   ```
+
+9. **Memory issues with large documents**
    ```bash
    # Reduce chunk size in configuration
    export CHUNK_SIZE=500
    export CHUNK_OVERLAP=50
    ```
 
-6. **Corporate portal authentication**
+10. **Corporate portal authentication**
    ```bash
    # Verify portal credentials
    export CORPORATE_PORTAL_USERNAME=your_username
    export CORPORATE_PORTAL_PASSWORD=your_password
    ```
 
-7. **Conversation memory not working**
+11. **Conversation memory not working**
    ```bash
    # Check if conversations directory exists
    ls -la ./vector_db/conversations/
@@ -878,14 +978,14 @@ Response:
    rm -rf ./vector_db/conversations/*.json
    ```
 
-8. **Session not persisting between browser refreshes**
+12. **Session not persisting between browser refreshes**
    ```bash
    # This is expected behavior - each browser session starts fresh
    # Use "View History" to access previous conversations
    # Export important conversations before closing browser
    ```
 
-9. **Python 3.13 setuptools issues**
+13. **Python 3.13 setuptools issues**
    ```bash
    # Run the setup script to handle compatibility
    python setup.py
@@ -894,7 +994,7 @@ Response:
    pip install --upgrade pip setuptools wheel
    ```
 
-10. **Package installation failures**
+14. **Package installation failures**
     ```bash
     # Use the installation script (recommended)
     ./install.sh
@@ -905,7 +1005,7 @@ Response:
     pip install chromadb sentence-transformers watchdog
     ```
 
-11. **Slow response times with large knowledge base**
+15. **Slow response times with large knowledge base**
     ```bash
     # Check knowledge base size - system auto-optimizes
     python main.py status
@@ -920,7 +1020,7 @@ Response:
     export MAX_DOCS_TO_RETRIEVE=10
     ```
 
-12. **External search taking too long**
+16. **External search taking too long**
     ```bash
     # System automatically limits external search:
     # - Max 2 URLs processed

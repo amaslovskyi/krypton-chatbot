@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+---
+
+# Markdown File Organization Rule
+
+## Directory Structure for Documentation
+
+All markdown documentation files must be placed in the `md/` directory, not in the project root. This keeps the project organized and separates code from documentation.
+
+### Correct Structure:
+```
+project-root/
+├── md/
+│   ├── CURCUIT_INTEGRATION.md
+│   ├── SETUP_CURCUIT.md
+│   ├── INTEGRATION_SUMMARY.md
+│   └── SECURITY.md
+├── src/
+├── config.py
+└── other-code-files
+```
+
+### Documentation Files Location:
+- [CURCUIT_INTEGRATION.md](mdc:md/CURCUIT_INTEGRATION.md) - Complete CURCUIT API integration guide
+- [SETUP_CURCUIT.md](mdc:md/SETUP_CURCUIT.md) - Quick setup instructions for users
+- [INTEGRATION_SUMMARY.md](mdc:md/INTEGRATION_SUMMARY.md) - Executive summary of changes
+- [SECURITY.md](mdc:md/SECURITY.md) - Security policies and best practices
+
+### Rules:
+1. **Always place new markdown files in `md/` directory**
+2. **Before answering documentation questions, read from `md/` directory first**
+3. **When referencing documentation, use the `md/` path**
+4. **Keep project root clean - only essential files like README.md, LICENSE, etc.**
+
+### Examples:
+- ✅ `md/API_DOCS.md` - Correct
+- ❌ `API_DOCS.md` - Wrong (in root)
+- ✅ `md/troubleshooting/COMMON_ISSUES.md` - Correct (subdirectories allowed)
+
+### When Creating Documentation:
+1. Check if relevant documentation already exists in `md/`
+2. Create new files in `md/` directory
+3. Use clear, descriptive filenames
+4. Reference other documentation using relative paths within `md/`

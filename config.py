@@ -6,7 +6,6 @@ MIT License - Copyright (c) 2025 talos-chatbot
 """
 
 import os
-from typing import Optional
 from pydantic_settings import BaseSettings
 
 
@@ -14,10 +13,22 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # LLM Configuration
-    use_local_llm: bool = True
+    # Primary: CURCUIT API, Backup: Local Ollama
+    use_curcuit_api: bool = True  # Use CURCUIT as primary LLM
+    use_local_llm: bool = True  # Keep as backup when CURCUIT fails
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "gemma3n:latest"
     openai_api_key: str = ""  # Only needed if use_local_llm = False
+
+    # CURCUIT API Configuration
+    curcuit_client_id: str = ""  # Cisco OAuth2 client ID
+    curcuit_client_secret: str = ""  # Cisco OAuth2 client secret
+    curcuit_app_key: str = ""  # Application key for API identification
+    curcuit_model: str = (
+        "gpt-4o-mini"  # Available: gpt-4.1, gpt-4o-mini, gpt-4o, o4-mini
+    )
+    curcuit_api_endpoint: str = "https://chat-ai.cisco.com"
+    curcuit_token_url: str = "https://id.cisco.com/oauth2/default/v1/token"
 
     # Embedding Configuration
     use_local_embeddings: bool = True
@@ -95,10 +106,22 @@ def validate_settings() -> bool:
     Validate that required settings are configured.
     Returns True if valid, False otherwise.
     """
-    # Check LLM configuration
+    # Check CURCUIT API configuration (primary LLM)
+    if settings.use_curcuit_api:
+        if not settings.curcuit_client_id or not settings.curcuit_client_secret:
+            print(
+                "❌ CURCUIT API credentials not set (CURCUIT_CLIENT_ID, CURCUIT_CLIENT_SECRET required)"
+            )
+            print("   Please configure these in your .env file")
+            return False
+        if not settings.curcuit_app_key:
+            print("⚠️  CURCUIT_APP_KEY not set - API calls may fail")
+        print(f"✅ Using CURCUIT API: {settings.curcuit_model}")
+
+    # Check local LLM configuration (backup)
     if settings.use_local_llm:
         print(
-            f"✅ Using local LLM: {settings.ollama_model} at {settings.ollama_base_url}"
+            f"✅ Local LLM backup: {settings.ollama_model} at {settings.ollama_base_url}"
         )
         # Check external API fallback
         if settings.enable_external_api_fallback:

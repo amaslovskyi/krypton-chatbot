@@ -10,9 +10,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 # LangChain and LLM imports
-from langchain_community.llms import OpenAI
 from langchain_community.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage, BaseMessage
 from langchain.prompts import PromptTemplate
 
 try:
@@ -20,9 +19,11 @@ try:
 except ImportError:
     ChatOllama = None
 
+# CURCUIT API client
+from src.curcuit_api import create_curcuit_client
+
 from src.retrieval import RetrievalEngine, RetrievalResult, create_retrieval_engine
 from src.document_loader import load_and_chunk_documents
-from src.vector_store import create_vector_store
 from src.conversation_memory import ConversationMemory, create_conversation_memory
 from config import get_settings, validate_settings
 
@@ -82,36 +83,150 @@ class RAGChatbot:
         logger.info("Initialized RAG chatbot with conversation memory")
 
     def _init_language_model(self):
-        """Initialize the language model for generation."""
+        """Initialize the language model for generation with CURCUIT primary and Ollama backup."""
+        # Initialize CURCUIT API client (primary)
+        self.curcuit_client = None
+        self.curcuit_available = False
+
+        if self.settings.use_curcuit_api:
+            try:
+                self.curcuit_client = create_curcuit_client()
+                # Test connection
+                self.curcuit_available = self.curcuit_client.test_connection()
+                if self.curcuit_available:
+                    logger.info(
+                        f"✅ CURCUIT API primary LLM initialized: {self.settings.curcuit_model}"
+                    )
+                    self.primary_model_name = f"curcuit-{self.settings.curcuit_model}"
+                else:
+                    logger.warning("⚠️  CURCUIT API connection failed, will use backup")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize CURCUIT API: {str(e)}")
+                self.curcuit_available = False
+
+        # Initialize backup LLM (Ollama or OpenAI)
+        self.backup_llm = None
+        self.backup_available = False
+
         try:
             if self.settings.use_local_llm:
-                # Use local Ollama model
+                # Use local Ollama model as backup
                 if ChatOllama is None:
                     raise ImportError(
                         "langchain_ollama not installed. Run: pip install langchain-ollama"
                     )
 
-                self.llm = ChatOllama(
+                self.backup_llm = ChatOllama(
                     model=self.settings.ollama_model,
                     base_url=self.settings.ollama_base_url,
                     temperature=0.7,
                 )
-                logger.info(f"Initialized Ollama model: {self.settings.ollama_model}")
-                self.model_name = self.settings.ollama_model
+                self.backup_available = True
+                logger.info(
+                    f"✅ Ollama backup LLM initialized: {self.settings.ollama_model}"
+                )
+                self.backup_model_name = f"ollama-{self.settings.ollama_model}"
             else:
-                # Use OpenAI model
-                self.llm = ChatOpenAI(
-                    model_name="gpt-3.5-turbo",
+                # Use OpenAI model as backup
+                self.backup_llm = ChatOpenAI(
+                    model="gpt-3.5-turbo",
                     temperature=0.7,
-                    openai_api_key=self.settings.openai_api_key,
+                    api_key=self.settings.openai_api_key,
                     max_tokens=1000,
                 )
-                logger.info("Initialized ChatOpenAI model")
-                self.model_name = "gpt-3.5-turbo"
+                self.backup_available = True
+                logger.info("✅ OpenAI backup LLM initialized")
+                self.backup_model_name = "openai-gpt-3.5-turbo"
 
         except Exception as e:
-            logger.error(f"Error initializing language model: {str(e)}")
-            raise
+            logger.error(f"❌ Error initializing backup language model: {str(e)}")
+            self.backup_available = False
+
+        # Set model name for responses
+        if self.curcuit_available:
+            self.model_name = self.primary_model_name
+        elif self.backup_available:
+            self.model_name = self.backup_model_name
+        else:
+            raise RuntimeError(
+                "❌ No working language models available! Please check your configuration."
+            )
+
+        # Log final configuration
+        status_msg = []
+        if self.curcuit_available:
+            status_msg.append(f"Primary: {self.primary_model_name}")
+        if self.backup_available:
+            status_msg.append(f"Backup: {self.backup_model_name}")
+
+        logger.info(f"✅ LLM configuration complete: {' | '.join(status_msg)}")
+
+    def _generate_with_fallback(self, messages: List[BaseMessage], **kwargs) -> Any:
+        """
+        Generate response using CURCUIT API first, with Ollama/OpenAI fallback.
+
+        Args:
+            messages: List of messages to send to LLM
+            **kwargs: Additional parameters for generation
+
+        Returns:
+            LLM response object with .content attribute
+        """
+        # Try CURCUIT API first
+        if self.curcuit_available and self.curcuit_client:
+            try:
+                logger.debug("Attempting generation with CURCUIT API...")
+
+                # Convert LangChain messages to standard format for CURCUIT
+                curcuit_response = self.curcuit_client.chat_completion(
+                    messages,
+                    temperature=kwargs.get("temperature", 0.7),
+                    max_tokens=kwargs.get("max_tokens", 1000),
+                )
+
+                if curcuit_response:
+                    logger.info("✅ Generated response using CURCUIT API")
+                    # Update model name to reflect actual usage
+                    self.model_name = self.primary_model_name
+
+                    # Create a response object similar to LangChain format
+                    class CurcuitResponse:
+                        def __init__(self, content: str):
+                            self.content = content
+
+                    return CurcuitResponse(curcuit_response)
+                else:
+                    logger.warning(
+                        "⚠️  CURCUIT API returned empty response, trying backup..."
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"❌ CURCUIT API error: {str(e)}, falling back to backup LLM"
+                )
+                # Mark CURCUIT as temporarily unavailable
+                self.curcuit_available = False
+
+        # Fallback to backup LLM
+        if self.backup_available and self.backup_llm:
+            try:
+                logger.debug("Using backup LLM for generation...")
+                response = self.backup_llm(messages, **kwargs)
+                logger.info("✅ Generated response using backup LLM")
+
+                # Update model name to reflect actual usage
+                self.model_name = self.backup_model_name
+
+                return response
+
+            except Exception as e:
+                logger.error(f"❌ Backup LLM error: {str(e)}")
+                raise RuntimeError(
+                    f"Both primary (CURCUIT) and backup LLMs failed: {str(e)}"
+                )
+
+        # No working LLMs available
+        raise RuntimeError("❌ No working language models available!")
 
     def _init_prompt_templates(self):
         """Initialize prompt templates for different scenarios."""
@@ -409,8 +524,8 @@ Please provide a helpful answer following these strict guidelines:
             # Standard prompt for first message or no context
             prompt = self.rag_prompt_template.format(context=context, question=question)
 
-        # Generate response
-        response = self.llm([HumanMessage(content=prompt)])
+        # Generate response using CURCUIT primary with Ollama backup
+        response = self._generate_with_fallback([HumanMessage(content=prompt)])
         answer = response.content.strip()
 
         # Calculate confidence based on source quality
@@ -435,7 +550,7 @@ Please provide a helpful answer following these strict guidelines:
         # Always use the restrictive fallback template
         prompt = self.fallback_prompt_template.format(question=question)
 
-        response = self.llm([HumanMessage(content=prompt)])
+        response = self._generate_with_fallback([HumanMessage(content=prompt)])
         answer = response.content.strip()
 
         # Very low confidence for fallback responses to indicate limitation
@@ -505,14 +620,31 @@ Please provide a helpful answer following these strict guidelines:
         """
         retrieval_stats = self.retrieval_engine.get_retrieval_stats()
 
+        # Determine model type based on current configuration
+        if self.curcuit_available:
+            model_type = "curcuit"
+        elif self.backup_available and self.settings.use_local_llm:
+            model_type = "ollama"
+        elif self.backup_available:
+            model_type = "openai"
+        else:
+            model_type = "unknown"
+
         return {
             "model": getattr(self, "model_name", "unknown"),
-            "model_type": "ollama" if self.settings.use_local_llm else "openai",
+            "model_type": model_type,
+            "llm_status": {
+                "curcuit_available": getattr(self, "curcuit_available", False),
+                "backup_available": getattr(self, "backup_available", False),
+                "primary_model": getattr(self, "primary_model_name", "none"),
+                "backup_model": getattr(self, "backup_model_name", "none"),
+            },
             "retrieval_engine": retrieval_stats,
             "settings": {
                 "similarity_threshold": self.settings.similarity_threshold,
                 "max_docs_to_retrieve": self.settings.max_docs_to_retrieve,
                 "chunk_size": self.settings.chunk_size,
+                "use_curcuit_api": self.settings.use_curcuit_api,
                 "use_local_llm": self.settings.use_local_llm,
                 "use_local_embeddings": self.settings.use_local_embeddings,
             },

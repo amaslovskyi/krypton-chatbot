@@ -634,15 +634,10 @@ class GitHubCrawler:
                     "doc/upgrade/overview.txt",
                     "doc/upgrade/upgrade.md",
                     "doc/upgrade/upgrade.txt",
-                    "doc/upgrade/snort_upgrade.md",
-                    "doc/upgrade/snort_upgrade.txt",
-                    "doc/upgrade/snort_upgrade.text",
                     "doc/upgrade/differences.md",
                     "doc/upgrade/differences.txt",
                     "doc/upgrade/config_changes.md",
                     "doc/upgrade/config_changes.txt",
-                    "doc/upgrade/snort2lua.md",
-                    "doc/upgrade/snort2lua.txt",
                     "doc/upgrade/migration.md",
                     "doc/upgrade/migration.txt",
                     "doc/migration/README.md",
@@ -932,17 +927,13 @@ class GitHubCrawler:
             "doc/README.md",
             "doc/install.md",
             "doc/build.md",
-            # Snort3-specific documentation paths
+            # Generic documentation paths for any project
             "doc/upgrade/overview.txt",
-            "doc/upgrade/snort_upgrade.txt",
             "doc/upgrade/differences.txt",
             "doc/upgrade/config_changes.txt",
-            "doc/upgrade/snort2lua.txt",
             "doc/user/concepts.txt",
             "doc/user/plugins.txt",
-            "doc/user/active.txt",
-            "doc/user/appid.txt",
-            "doc/user/binder.txt",
+            "doc/user/guide.txt",
         ]
 
         query_lower = query.lower()
@@ -952,10 +943,8 @@ class GitHubCrawler:
         if any(term in query_lower for term in ["upgrade", "updating", "migrate"]):
             prioritized_files = [
                 "doc/upgrade/overview.txt",
-                "doc/upgrade/snort_upgrade.txt",
                 "doc/upgrade/differences.txt",
                 "doc/upgrade/config_changes.txt",
-                "doc/upgrade/snort2lua.txt",
                 "ChangeLog.md",
                 "CHANGELOG.md",
             ]
@@ -965,9 +954,7 @@ class GitHubCrawler:
             prioritized_files = [
                 "doc/user/plugins.txt",
                 "doc/user/concepts.txt",
-                "doc/user/active.txt",
-                "doc/user/appid.txt",
-                "doc/user/binder.txt",
+                "doc/user/guide.txt",
             ]
         elif any(
             term in query_lower for term in ["install", "build", "setup", "compile"]

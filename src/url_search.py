@@ -76,9 +76,7 @@ class ExternalURLSearcher:
                 url.strip() for url in self.settings.external_search_urls.split(",")
             ]
             self.default_urls.extend(external_urls)
-        else:
-            # Fallback default
-            self.default_urls.append("https://github.com/snort3/snort3")
+        # Note: No fallback URLs - users should configure their own knowledge base URLs
 
         # Filter out None values and ensure URLs are valid
         self.default_urls = [

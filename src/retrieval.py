@@ -508,28 +508,20 @@ class RetrievalEngine:
         domain_keywords = set()
 
         for url in self.url_searcher.default_urls:
-            if "snort" in url.lower():
+            # Extract generic domain keywords from URLs
+            if "github.com" in url.lower():
                 domain_keywords.update(
                     [
-                        "snort",
-                        "intrusion",
-                        "detection",
-                        "security",
-                        "network",
-                        "ips",
-                        "ids",
+                        "github",
+                        "code",
+                        "repository",
+                        "documentation",
+                        "development",
+                        "api",
+                        "guide",
                     ]
                 )
-            if "andrewng" in url.lower() or "ai" in url.lower():
-                domain_keywords.update(
-                    [
-                        "ai",
-                        "machine learning",
-                        "deep learning",
-                        "artificial intelligence",
-                        "neural",
-                    ]
-                )
+            # Add more URL pattern matching as needed for your knowledge base
 
         # Add keywords from local documents (basic detection)
         domain_keywords.update(

@@ -1,8 +1,8 @@
-# RAG Chatbot
+# Universal RAG Chatbot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A sophisticated **Retrieval-Augmented Generation (RAG)** chatbot that combines local document search with corporate portal fallback. The system intelligently retrieves relevant information from your documents and falls back to a corporate portal when local knowledge is insufficient.
+A sophisticated **Retrieval-Augmented Generation (RAG)** chatbot that combines local document search with external knowledge base fallback. The system intelligently retrieves relevant information from your custom knowledge base and falls back to external sources when local knowledge is insufficient.
 
 ## 🌟 Features
 
@@ -243,7 +243,7 @@ ADDITIONAL_KNOWLEDGE_PATHS=/path/to/kb1,/path/to/kb2
 # External URL Search Configuration
 ENABLE_EXTERNAL_URL_SEARCH=true
 # Mix of GitHub repos and web documentation sites
-EXTERNAL_SEARCH_URLS=https://github.com/snort3/snort3,https://docs.nginx.com,https://kubernetes.io/docs
+EXTERNAL_SEARCH_URLS=https://github.com/your-org/docs,https://docs.example.com,https://kubernetes.io/docs
 URL_SEARCH_TIMEOUT=15
 URL_FALLBACK_THRESHOLD=0.5
 STRICT_KNOWLEDGE_BASE_MODE=true
@@ -368,37 +368,37 @@ The web interface provides a modern chat UI with:
 The system can now comprehensively crawl entire GitHub repositories to find specialized documentation:
 
 ```bash
-# Example: Comprehensive Snort3 upgrade query
-❓ Your question: How to upgrade Snort from version 2 to 3 with plugins?
+# Example: Comprehensive documentation query
+❓ Your question: How to upgrade from version 2 to 3 with plugins?
 
 🔍 Starting search...
 📄 Searching local documents... (Found 3 local docs)
 🌐 Checking for additional sources... (Low confidence for specialized query)
 🕷️ Crawling external knowledge base...
    🚦 Routing URLs: 1 GitHub, 2 Web
-   📂 GitHub Crawler: Discovering all files in snort3/snort3
+   📂 GitHub Crawler: Discovering all files in your-org/project
    📁 Found 276 documentation files to process
-   📄 Added doc/upgrade/snort_upgrade.txt (relevance: 1.0)
+   📄 Added doc/upgrade/upgrade_guide.txt (relevance: 1.0)
    📄 Added doc/user/plugins.txt (relevance: 0.87)
    🌐 Web Crawler: Processing documentation sites
-   📄 Added nginx installation guide (relevance: 0.82)
-   📄 Added kubernetes setup tutorial (relevance: 0.75)
+   📄 Added installation guide (relevance: 0.82)
+   📄 Added setup tutorial (relevance: 0.75)
 🤖 Generating comprehensive response...
 
 🤖 Answer (confidence: 95%):
-# Snort 2 to 3 Upgrade Guide
+# Version 2 to 3 Upgrade Guide
 
 ## Overview
-Snort 3 is a complete rewrite with significant architectural changes...
+Version 3 is a complete rewrite with significant architectural changes...
 
 ## Step-by-Step Upgrade Process
-1. **Install Dependencies**: CMake, DAQ, LuaJIT...
-2. **Build Snort 3**: Run ./configure_cmake.sh...
-3. **Convert Configuration**: Use snort2lua tool...
+1. **Install Dependencies**: Build tools, libraries...
+2. **Build Project**: Run build scripts...
+3. **Convert Configuration**: Use migration tools...
 4. **Plugin Migration**: Update custom plugins...
 
 📚 Sources (5):
-  1. doc/upgrade/snort_upgrade.txt (external) - 100% relevance
+  1. doc/upgrade/upgrade_guide.txt (external) - 100% relevance
   2. doc/user/plugins.txt (external) - 87% relevance  
   3. doc/upgrade/differences.txt (external) - 85% relevance
   4. README.md (external) - 78% relevance
@@ -432,7 +432,7 @@ curl -X POST http://localhost:5001/api/chat \
 # Send a streaming chat request with progress updates
 curl -X POST http://localhost:5001/chat-stream \
   -H "Content-Type: application/json" \
-  -d '{"message": "How to upgrade Snort plugins?"}' \
+  -d '{"message": "How to upgrade plugins?"}' \
   --no-buffer
 
 # Example streaming response:
@@ -596,7 +596,7 @@ Once running, the system:
 | Variable                     | Default                            | Description                                    |
 | ---------------------------- | ---------------------------------- | ---------------------------------------------- |
 | `ENABLE_EXTERNAL_URL_SEARCH` | `true`                             | Enable external URL search fallback            |
-| `EXTERNAL_SEARCH_URLS`       | `https://github.com/snort3/snort3` | Comma-separated URLs to crawl                  |
+| `EXTERNAL_SEARCH_URLS`       | `https://github.com/your-org/docs` | Comma-separated URLs to crawl                  |
 | `URL_SEARCH_TIMEOUT`         | `15`                               | Timeout for external URL requests (seconds)    |
 | `URL_FALLBACK_THRESHOLD`     | `0.5`                              | Confidence threshold for triggering URL search |
 | `STRICT_KNOWLEDGE_BASE_MODE` | `true`                             | Only answer from configured knowledge sources  |
@@ -781,7 +781,7 @@ POST /chat-stream
 Content-Type: application/json
 
 {
-  "message": "How to upgrade Snort plugins?",
+  "message": "How to upgrade plugins?",
   "max_sources": 5,          // optional
   "session_id": "uuid"       // optional
 }

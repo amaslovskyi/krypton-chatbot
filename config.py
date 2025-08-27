@@ -50,9 +50,7 @@ class Settings(BaseSettings):
 
     # External URL Search Configuration
     enable_external_url_search: bool = True
-    external_search_urls: str = (
-        "https://github.com/snort3/snort3"  # Comma-separated URLs
-    )
+    external_search_urls: str = ""  # Comma-separated URLs - configure in .env file
     url_search_timeout: int = 15  # seconds (increased for advanced crawler)
     url_fallback_threshold: float = 0.5  # minimum confidence to skip URL search
     strict_knowledge_base_mode: bool = (

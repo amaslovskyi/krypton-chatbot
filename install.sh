@@ -139,7 +139,7 @@ CORPORATE_PORTAL_PASSWORD=your_password
 # Enable fallback search of external URLs when local docs don't have info
 ENABLE_EXTERNAL_URL_SEARCH=true
 # Comma-separated list of URLs to search (GitHub repos, documentation sites, etc.)
-EXTERNAL_SEARCH_URLS=https://github.com/snort3/snort3,https://snort.org/documents
+EXTERNAL_SEARCH_URLS=
 # Timeout for URL requests in seconds (increased for advanced crawler)
 URL_SEARCH_TIMEOUT=15
 # Confidence threshold - if local results are above this, skip URL search
